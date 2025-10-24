@@ -1,0 +1,5 @@
+cidr: "10.1.0.0/16"
+private_subnets: ["10.1.0.0/18", "10.1.64.0/18", "10.1.128.0/18"]
+public_subnets: ["10.1.192.0/22", "10.1.196.0/22", "10.1.200.0/22"]
+single_nat_gateway: true
+## vpc_endpoints: ["s3", "ecr"]   ### if s3 or ecr are in use, create vpc endpoints

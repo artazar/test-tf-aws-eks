@@ -1,0 +1,24 @@
+karpenter_nodepool_arm64_name: ${karpenter_nodepool_arm64_name}
+karpenter_nodepool_amd64_name: ${karpenter_nodepool_amd64_name}
+
+karpenter_nodeclass_arm64_name: ${karpenter_nodeclass_arm64_name}
+karpenter_nodeclass_amd64_name: ${karpenter_nodeclass_amd64_name}
+
+karpenter_nodepool_arm64_capacity_types: ${karpenter_nodepool_arm64_capacity_types}
+karpenter_nodepool_amd64_capacity_types: ${karpenter_nodepool_amd64_capacity_types}
+
+karpenter_nodepool_disruption_consolidation_policy: ${karpenter_nodepool_disruption_consolidation_policy}
+karpenter_nodepool_disruption_consolidate_after: ${karpenter_nodepool_disruption_consolidate_after}
+karpenter_nodepool_disruption_expire_after: ${karpenter_nodepool_disruption_expire_after}
+
+karpenter_nodepool_disruption_budgets_nodes: ${karpenter_nodepool_disruption_budgets_nodes}
+karpenter_nodepool_disruption_budgets_nodes_max: ${karpenter_nodepool_disruption_budgets_nodes_max}
+karpenter_nodepool_disruption_budgets_schedule: ${karpenter_nodepool_disruption_budgets_schedule}
+karpenter_nodepool_disruption_budgets_duration: ${karpenter_nodepool_disruption_budgets_duration}
+
+karpenter_nodepool_cpu_limit: ${karpenter_nodepool_cpu_limit}
+
+karpenter_nodepool_arm64_weight: ${karpenter_nodepool_arm64_weight}
+karpenter_nodepool_amd64_weight: ${karpenter_nodepool_amd64_weight}
+
+karpenter_nodepool_cilium_enabled: ${karpenter_nodepool_cilium_enabled}

@@ -1,0 +1,7 @@
+cluster_name: demo-001
+cluster_version: 1.34
+karpenter_version: 1.8.1
+
+aws_admin_users: [
+  "artem.m@globaldots.com"
+]

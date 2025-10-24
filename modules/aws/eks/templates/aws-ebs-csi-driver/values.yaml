@@ -1,0 +1,36 @@
+controller:
+  serviceAccount:
+    # A service account will be created for you if set to true. Set to false if you want to use your own.
+    create: true
+    name: ebs-csi-controller-sa
+    annotations:
+      eks.amazonaws.com/role-arn: ${aws_ebs_csi_driver_role_arn}
+    automountServiceAccountToken: true
+node:
+  enableWindows: false
+storageClasses:
+  - name: gp2-ebs
+    annotations:
+      storageclass.kubernetes.io/is-default-class: "false"
+    volumeBindingMode: WaitForFirstConsumer
+    reclaimPolicy: Delete
+    parameters:
+      fsType: ext4
+      type: gp2
+    allowedTopologies:
+    - matchLabelExpressions:
+      - key: topology.ebs.csi.aws.com/zone
+        values: [${azs}] # ["eu-west-1a", "eu-west-1b", "eu-west-1c"]
+  - name: gp3-ebs
+    annotations:
+      storageclass.kubernetes.io/is-default-class: "true"
+    volumeBindingMode: WaitForFirstConsumer
+    allowVolumeExpansion: true
+    reclaimPolicy: Delete
+    parameters:
+      fsType: ext4
+      type: gp3
+    allowedTopologies:
+    - matchLabelExpressions:
+      - key: topology.ebs.csi.aws.com/zone
+        values: [${azs}] # ["eu-west-1a", "eu-west-1b", "eu-west-1c"]

@@ -1,0 +1,122 @@
+#!/bin/bash
+
+set -e 
+
+# Log the script output to /var/log/user-data.log
+exec > >(tee /var/log/user-data.log|logger -t user-data ) 2>&1
+echo "User Data Script Started"
+
+export DEBIAN_FRONTEND=noninteractive
+
+echo "Installing extra packages..."
+
+apt-get update && \
+apt-get upgrade -y -o Dpkg::Options::="--force-confnew"
+
+apt-get install -y \
+  apt-transport-https \
+  ca-certificates \
+  software-properties-common \
+  build-essential \
+  unzip \
+  curl \
+  wget \
+  gnupg \
+  net-tools \
+  socat \
+  jq \
+  expect 
+
+ufw disable # use security groups
+apt-get remove -y ec2-instance-connect # use direct ssh keys management
+
+rm -rf /var/lib/apt/lists/*
+
+hostnamectl set-hostname ${hostname}
+
+echo "Adding Ansible SSH key..."
+
+# ansible ssh key
+adduser --disabled-password --gecos "" ansible
+usermod -aG admin ansible
+echo 'ansible ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/100-ansible
+mkdir -p /home/ansible/.ssh
+echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCwaGZS1NfhvFSu+82K7G4WvbZDQHgay3hleppn62mYF4nemkqWohJBQA+DtMmHxFVygs78nTtYbB8Azxx3G+LEppgzW9OH2GMbVWdPQPNs85XAvBGPMJCkDDvf54iCWW5vz5NWVEywrFYDNCvai1DCdS5oN99Yav6FFRZb9dcsU9s6h/z0V1dgNiV8X/c2YtnS8UoVyRAHbkJUYtZ5cqUWfHGh4rkUQeXhbmAP9MP7M50R7YWPtkirec/bv18rgaZInyGtOGsbdCGjB5/wvy51DlX1vX4lr23UEmRZzXv77sQViQUQCvOcYVs9kA4Tng9VqaJ6J9YDNXAVhu0himYWnXgO/t44qe7nA91gI9efcV2vhKR8cg1+zTgkivmSTCy0G6hqW1CLwgx7BaGa+2IBxA4ljkcV8nGqnsDsgEn5ZymFvsyU83WcmLCeZJZyTJfMfE2PlCX8JXPvfcszI5FIqB82EcnMiYa/Y5eJrx19okMjuGVe6RPnhSzOV/RsMz0=" >> /home/ansible/.ssh/authorized_keys
+
+# Formatting extra EBS volumes
+
+# Constants
+DATA_MOUNT_BASE="/mnt/data"
+
+# Check if xfsprogs is installed (for formatting)
+if ! command -v mkfs.xfs &> /dev/null
+then
+    echo "Installing xfsprogs..."
+    apt-get install -y xfsprogs
+fi
+
+# Get list of non-root EBS volumes attached
+echo "Detecting and formatting additional EBS volumes..."
+
+DISK_INDEX=1  # Start index from 1 for naming purposes (e.g., /mnt/data1)
+
+lsblk -d -n -o NAME,MOUNTPOINT | awk '$2 == "" {print $1}' | while read -r disk_name; do
+    DEVICE="/dev/$${disk_name}"  # Full device path
+
+    echo "Processing $${DEVICE}"
+
+    # Ignore root volume by its mounted partitions (/, /boot/efi)
+    if mount | grep -q "on $${DEVICE} "; then
+        echo "$${DEVICE} is already mounted, skipping."
+        continue
+    fi
+
+    # Check if disk has a partition table (skip OS disks)
+    if [ -b "$${DEVICE}p1" ]; then
+        echo "Skipping $${DEVICE} (it has partitions, likely OS drive)"
+        continue
+    fi
+
+    # Ensure disk is formatted as XFS
+    if ! blkid $${DEVICE}; then
+        echo "Formatting $${DEVICE} as XFS"
+        mkfs.xfs -f $${DEVICE}
+    else
+        echo "$${DEVICE} is already formatted, skipping"
+    fi
+
+    # Create mount point
+    MOUNT_POINT="$${DATA_MOUNT_BASE}$${DISK_INDEX}"
+    mkdir -p $${MOUNT_POINT}
+
+    # Get disk UUID
+    UUID=$(blkid -s UUID -o value $${DEVICE})
+
+    # Persist mount in /etc/fstab
+    if ! grep -q "$${UUID}" /etc/fstab; then
+        echo "UUID=$${UUID} $${MOUNT_POINT} xfs defaults,noatime 0 2" >> /etc/fstab
+    fi
+
+    # Mount the volume
+    mount $${MOUNT_POINT}
+    echo "$${DEVICE} mounted on $${MOUNT_POINT}"
+
+    ((DISK_INDEX++))  # Increment number for next device
+done
+
+# Verify mount points
+mount | grep "$${DATA_MOUNT_BASE}"
+
+echo "All volumes formatted and mounted successfully."
+
+# Run custom commands if any are provided
+%{ if custom_commands != "" ~}
+echo "Running user-defined commands..."
+cat << 'EOF' > /tmp/custom_commands.sh
+${custom_commands}
+EOF
+
+chmod +x /tmp/custom_commands.sh
+/tmp/custom_commands.sh
+echo "Finished applying user-defined commands!"
+%{ endif ~}
