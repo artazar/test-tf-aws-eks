@@ -137,13 +137,13 @@ apply: ## Run terragrunt apply (usage: make apply [demo] [vpc] [ARGS="additional
 		cd sites/$(SITE) && $(TERRAGRUNT) run --all --queue-exclude-dir "*/{$(EXCLUDE)}" -- apply -auto-approve $(ARGS); \
 	fi
 
-destroy: ## Run terragrunt destroy (usage: make destroy [demo] [vpc] [ARGS="-auto-approve"] [EXCLUDE="bastion"])
+destroy: ## Run terragrunt destroy (usage: make destroy [demo] [vpc] [ARGS="additional-args"] [EXCLUDE="bastion"])
 	@if [ -n "$(MODULE)" ]; then \
 		echo "Running terragrunt destroy for module $(MODULE) in site: $(SITE)..."; \
-		cd sites/$(SITE)/$(MODULE) && $(TERRAGRUNT) destroy $(ARGS); \
+		cd sites/$(SITE)/$(MODULE) && $(TERRAGRUNT) destroy -auto-approve $(ARGS); \
 	else \
 		echo "Running terragrunt destroy --all for site: $(SITE) ..."; \
-		cd sites/$(SITE) && $(TERRAGRUNT) run --all --queue-exclude-dir "*/{$(EXCLUDE)}" -- destroy $(ARGS); \
+		cd sites/$(SITE) && $(TERRAGRUNT) run --all --queue-exclude-dir "*/{$(EXCLUDE)}" -- destroy -auto-approve $(ARGS); \
 	fi
 
 # Per-module commands
@@ -171,10 +171,10 @@ apply-module: ## Run terragrunt apply for a specific module (usage: make apply-m
 	@echo "Running terragrunt apply for module $(MODULE) in site: $(SITE)..."
 	@cd sites/$(SITE)/$(MODULE) && $(TERRAGRUNT) apply -auto-approve $(ARGS)
 
-destroy-module: ## Run terragrunt destroy for a specific module (usage: make destroy-module demo vpc [ARGS="-auto-approve"])
+destroy-module: ## Run terragrunt destroy for a specific module (usage: make destroy-module demo vpc [ARGS="additional-args"])
 	@if [ -z "$(MODULE)" ]; then \
 		echo "Error: MODULE is required. Usage: make destroy-module <site> <module>"; \
 		exit 1; \
 	fi
 	@echo "Running terragrunt destroy for module $(MODULE) in site: $(SITE)..."
-	@cd sites/$(SITE)/$(MODULE) && $(TERRAGRUNT) destroy $(ARGS)
+	@cd sites/$(SITE)/$(MODULE) && $(TERRAGRUNT) destroy -auto-approve $(ARGS)
