@@ -154,3 +154,4 @@ make apply EXCLUDE="bastion,eks"
 ## Known issues
 
 - Each `make apply` produces changes to `helm_release.karpenter` and `helm_release.karpenter_crds` resources. This is the issue with the provided helm chart, unresolved as of today, related to updating OCI helm repo token. 
+- Because of complicated dependency resolution scheme, `make destroy` may need to be run two times to clean up all resources completely.
